@@ -2,59 +2,62 @@ async function loadProducts() {
   const res = await fetch('data/products.json');
   const products = await res.json();
 
-  const skuFilter = document.getElementById('skuFilter');
-  const customerFilter = document.getElementById('customerFilter');
+  const searchInput = document.getElementById('searchInput');
+  const skuSelect = document.getElementById('skuSelect');
   const resultsContainer = document.getElementById('resultsContainer');
   const lastUpdated = document.getElementById('lastUpdated');
 
-  lastUpdated.textContent = "N/A"; // optional
+  lastUpdated.textContent = "N/A";
 
-  // Initially render all products
+  // Initial render: all products as cards
   renderProducts(products);
 
-  // Event listeners
-  [skuFilter, customerFilter].forEach(el => {
-    el.addEventListener('input', updateResults);
-    el.addEventListener('change', updateResults);
-  });
+  let currentBreakdown = [];
+  let sortConfig = { key: null, asc: true };
 
-  function updateResults() {
-    const filters = {
-      sku: skuFilter.value.trim().toLowerCase(),
-      customer: customerFilter.value
-    };
+  // Event: keyword search
+  searchInput.addEventListener('input', () => {
+    const term = searchInput.value.trim().toLowerCase();
+    if (!term) {
+      renderProducts(products);
+      skuSelect.innerHTML = `<option value="">Select SKU</option>`;
+      return;
+    }
 
-    // Filter products by SKU/description
-    let filteredProducts = products.filter(p =>
-      !filters.sku || p.sku.toLowerCase().includes(filters.sku) ||
-      p.description.toLowerCase().includes(filters.sku)
+    const filtered = products.filter(p =>
+      p.description.toLowerCase().includes(term) ||
+      p.sku.toLowerCase().includes(term)
     );
 
-    // Populate Customer dropdown based on filtered products
-    const uniqueCustomers = [...new Set(filteredProducts.map(p => p.customer).filter(Boolean))];
-    customerFilter.innerHTML = `<option value="">All Customers</option>` +
-      uniqueCustomers.map(c => `<option value="${c}">${c}</option>`).join('');
+    // Render cards for matching products
+    renderProducts(filtered);
 
-    // Apply customer filter
-    if (filters.customer) {
-      filteredProducts = filteredProducts.filter(p => p.customer === filters.customer);
+    // Populate SKU dropdown from filtered results
+    const uniqueSkus = [...new Set(filtered.map(p => p.sku))];
+    skuSelect.innerHTML = `<option value="">Select SKU</option>` +
+      uniqueSkus.map(s => `<option value="${s}">${s}</option>`).join('');
+  });
+
+  // Event: SKU selection → detailed monthly breakdown
+  skuSelect.addEventListener('change', () => {
+    const selectedSKU = skuSelect.value;
+    if (!selectedSKU) {
+      const term = searchInput.value.trim().toLowerCase();
+      const filtered = products.filter(p =>
+        p.description.toLowerCase().includes(term) ||
+        p.sku.toLowerCase().includes(term)
+      );
+      renderProducts(filtered);
+      return;
     }
 
-    // Render either cards or breakdown
-    if (filters.sku || filters.customer) {
-      const breakdown = getFilteredBreakdown(filteredProducts);
-      if (breakdown.length === 0) {
-        resultsContainer.innerHTML = `<p>No matching purchases found.</p>`;
-      } else {
-        resultsContainer.innerHTML = renderBreakdownTable(breakdown);
-      }
-    } else {
-      renderProducts(products);
-    }
-  }
+    const skuProducts = products.filter(p => p.sku === selectedSKU);
+    currentBreakdown = getMonthlyBreakdown(skuProducts);
+    renderBreakdownTable(currentBreakdown);
+  });
 
   function renderProducts(list) {
-    if (!list || list.length === 0) {
+    if (!list.length) {
       resultsContainer.innerHTML = `<p>No products found.</p>`;
       return;
     }
@@ -72,53 +75,62 @@ async function loadProducts() {
     `).join('');
   }
 
-  function getFilteredBreakdown(filteredProducts) {
+  function getMonthlyBreakdown(list) {
     const grouped = {};
-    filteredProducts.forEach(p => {
+    list.forEach(p => {
       const month = new Date(p.date).toLocaleString('default', { month: 'short', year: 'numeric' });
       const key = `${p.customer}_${month}`;
-      if (!grouped[key]) {
-        grouped[key] = {
-          customer: p.customer,
-          month,
-          totalQty: 0,
-          totalPrice: 0,
-          totalCost: 0
-        };
-      }
+      if (!grouped[key]) grouped[key] = { customer: p.customer, month, totalQty: 0, totalPrice: 0, totalCost: 0 };
       grouped[key].totalQty += Number(p.qty) || 0;
       grouped[key].totalPrice += (Number(p.price) || 0) * (Number(p.qty) || 0);
       grouped[key].totalCost += (Number(p.cost) || 0) * (Number(p.qty) || 0);
     });
-    return Object.values(grouped);
+    return Object.values(grouped).map(row => ({
+      ...row,
+      avgPrice: row.totalQty ? row.totalPrice / row.totalQty : 0
+    }));
   }
 
-  function renderBreakdownTable(breakdown) {
-    return `
-      <h3>Monthly Breakdown</h3>
+  function renderBreakdownTable(data) {
+    resultsContainer.innerHTML = `
+      <h3>Monthly Breakdown for SKU: ${skuSelect.value}</h3>
       <table class="breakdown-table">
         <thead>
           <tr>
-            <th>Customer</th>
-            <th>Month</th>
-            <th>Total Qty</th>
-            <th>Total Price</th>
-            <th>Total Cost</th>
+            <th data-key="customer">Customer</th>
+            <th data-key="month">Month</th>
+            <th data-key="totalQty">Total Qty</th>
+            <th data-key="avgPrice">Avg Price</th>
+            <th data-key="totalCost">Total Cost</th>
           </tr>
         </thead>
         <tbody>
-          ${breakdown.map(row => `
+          ${data.map(row => `
             <tr>
               <td>${row.customer}</td>
               <td>${row.month}</td>
               <td>${row.totalQty}</td>
-              <td>$${row.totalPrice.toFixed(2)}</td>
+              <td>$${row.avgPrice.toFixed(2)}</td>
               <td>$${row.totalCost.toFixed(2)}</td>
             </tr>
           `).join('')}
         </tbody>
       </table>
     `;
+
+    // Add click events for sorting
+    document.querySelectorAll('.breakdown-table th').forEach(th => {
+      th.addEventListener('click', () => {
+        const key = th.dataset.key;
+        sortConfig.asc = sortConfig.key === key ? !sortConfig.asc : true;
+        sortConfig.key = key;
+        const sorted = [...currentBreakdown].sort((a, b) => {
+          if (typeof a[key] === 'string') return sortConfig.asc ? a[key].localeCompare(b[key]) : b[key].localeCompare(a[key]);
+          return sortConfig.asc ? a[key] - b[key] : b[key] - a[key];
+        });
+        renderBreakdownTable(sorted);
+      });
+    });
   }
 }
 
