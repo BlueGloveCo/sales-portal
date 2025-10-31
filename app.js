@@ -1,36 +1,45 @@
 async function loadProducts() {
   const res = await fetch('data/products.json');
-  const products = await res.json();
+  const products = await res.json(); // products is already an array
 
   const searchInput = document.getElementById('searchInput');
   const resultsContainer = document.getElementById('resultsContainer');
   const lastUpdated = document.getElementById('lastUpdated');
 
-  // Show last updated date (if available in JSON)
-  if (products.meta && products.meta.last_updated) {
-    lastUpdated.textContent = products.meta.last_updated;
-  }
+  lastUpdated.textContent = "N/A"; // optional
 
   // Render all products initially
-  renderProducts(products.items);
+  renderProducts(products);
 
   // Filter products on search input
   searchInput.addEventListener('input', (e) => {
     const term = e.target.value.toLowerCase();
-    const filtered = products.items.filter(p =>
-      p.name.toLowerCase().includes(term) ||
-      p.category.toLowerCase().includes(term)
+
+    const filtered = products.filter(p =>
+      p.description.toLowerCase().includes(term) ||
+      p.sku.toLowerCase().includes(term) ||
+      p.customer.toLowerCase().includes(term)
     );
+
     renderProducts(filtered);
   });
 
   function renderProducts(list) {
+    if (!list || list.length === 0) {
+      resultsContainer.innerHTML = `<p>No products found.</p>`;
+      return;
+    }
+
     resultsContainer.innerHTML = list.map(p => `
       <div class="card">
-        <h3>${p.name}</h3>
-        <p><strong>Category:</strong> ${p.category}</p>
-        <p><strong>Price:</strong> $${p.price.toFixed(2)}</p>
-        <p><strong>Cost:</strong> $${p.cost.toFixed(2)}</p>
+        <h3>${p.description}</h3>
+        <p><strong>SKU:</strong> ${p.sku}</p>
+        <p><strong>Customer:</strong> ${p.customer}</p>
+        <p><strong>Quantity:</strong> ${p.qty}</p>
+        <p><strong>Price:</strong> $${Number(p.price).toFixed(2)}</p>
+        <p><strong>Cost:</strong> $${Number(p.cost).toFixed(2)}</p>
+        <p><strong>Rep:</strong> ${p.rep}</p>
+        <p><strong>Invoice #:</strong> ${p["inv#"]}</p>
       </div>
     `).join('');
   }
