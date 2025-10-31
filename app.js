@@ -1,6 +1,9 @@
 async function loadProducts() {
   const res = await fetch('data/products.json');
-  const products = await res.json(); // products is already an array
+  console.log('Response status:', res.status);
+
+  const products = await res.json();
+  console.log('Parsed JSON:', products);
 
   const searchInput = document.getElementById('searchInput');
   const resultsContainer = document.getElementById('resultsContainer');
