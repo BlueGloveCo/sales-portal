@@ -72,27 +72,20 @@
 <header class="header">
   <h1>Sales Portal</h1>
 
-  <!-- Primary search -->
-  <input type="text" id="searchInput" placeholder="Search products by name or SKU..." />
-
-  <!-- Filters -->
   <div class="filters-container">
+    <!-- SKU / Product search -->
+    <label>
+      Product / SKU:
+      <input type="text" id="skuFilter" placeholder="Search by SKU or description..." />
+    </label>
+
+    <!-- Customer filter (dynamic) -->
     <label>
       Customer:
       <select id="customerFilter">
         <option value="">All Customers</option>
-        <!-- dynamically populated from JS -->
+        <!-- dynamically populated from JS based on search -->
       </select>
-    </label>
-
-    <label>
-      Min Price:
-      <input type="number" id="minPriceFilter" placeholder="0" min="0" />
-    </label>
-
-    <label>
-      Max Price:
-      <input type="number" id="maxPriceFilter" placeholder="0" min="0" />
     </label>
   </div>
 </header>
