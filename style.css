@@ -47,3 +47,19 @@ body {
   background: #eee;
   font-size: 0.9rem;
 }
+.breakdown-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1em;
+}
+
+.breakdown-table th, .breakdown-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.breakdown-table th {
+  background: #f5f5f5;
+  font-weight: 600;
+}
