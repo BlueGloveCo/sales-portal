@@ -1,11 +1,9 @@
 async function loadProducts() {
-  // 1️⃣ Fetch the JSON
   const res = await fetch('data/products.json');
   const products = await res.json();
 
   const searchInput = document.getElementById('searchInput');
   const customerFilter = document.getElementById('customerFilter');
-  const repFilter = document.getElementById('repFilter');
   const minPriceFilter = document.getElementById('minPriceFilter');
   const maxPriceFilter = document.getElementById('maxPriceFilter');
   const resultsContainer = document.getElementById('resultsContainer');
@@ -13,18 +11,15 @@ async function loadProducts() {
 
   lastUpdated.textContent = "N/A"; // optional
 
-  // 2️⃣ Populate customer and rep dropdowns dynamically
-  const uniqueCustomers = [...new Set(products.map(p => p.customer))];
+  // Populate Customer dropdown
+  const uniqueCustomers = [...new Set(products.map(p => p.customer).filter(Boolean))];
   uniqueCustomers.forEach(c => customerFilter.insertAdjacentHTML('beforeend', `<option value="${c}">${c}</option>`));
 
-  const uniqueReps = [...new Set(products.map(p => p.rep))];
-  uniqueReps.forEach(r => repFilter.insertAdjacentHTML('beforeend', `<option value="${r}">${r}</option>`));
-
-  // 3️⃣ Render all products initially as cards
+  // Render all products initially
   renderProducts(products);
 
-  // 4️⃣ Listen for any filter change
-  [searchInput, customerFilter, repFilter, minPriceFilter, maxPriceFilter].forEach(el => {
+  // Listen to all filter inputs
+  [searchInput, customerFilter, minPriceFilter, maxPriceFilter].forEach(el => {
     el.addEventListener('input', updateResults);
     el.addEventListener('change', updateResults);
   });
@@ -33,22 +28,20 @@ async function loadProducts() {
     const filters = {
       term: searchInput.value.trim().toLowerCase(),
       customer: customerFilter.value,
-      rep: repFilter.value,
       minPrice: minPriceFilter.value ? Number(minPriceFilter.value) : null,
       maxPrice: maxPriceFilter.value ? Number(maxPriceFilter.value) : null
     };
 
-    // If no filters, show all cards
-    if (!filters.term && !filters.customer && !filters.rep && filters.minPrice == null && filters.maxPrice == null) {
+    // If all filters empty → show all cards
+    if (!filters.term && !filters.customer && filters.minPrice == null && filters.maxPrice == null) {
       renderProducts(products);
       return;
     }
 
-    // Generate filtered breakdown
     const breakdown = getFilteredBreakdown(products, filters);
 
     if (breakdown.length === 0) {
-      resultsContainer.innerHTML = `<p>No data matches the selected filters.</p>`;
+      resultsContainer.innerHTML = `<p>No products match the selected filters.</p>`;
       return;
     }
 
@@ -80,9 +73,6 @@ async function loadProducts() {
     `;
   }
 
-  // ============================
-  // Helper: render products as cards
-  // ============================
   function renderProducts(list) {
     if (!list || list.length === 0) {
       resultsContainer.innerHTML = `<p>No products found.</p>`;
@@ -97,36 +87,28 @@ async function loadProducts() {
         <p><strong>Quantity:</strong> ${p.qty}</p>
         <p><strong>Price:</strong> $${Number(p.price).toFixed(2)}</p>
         <p><strong>Cost:</strong> $${Number(p.cost).toFixed(2)}</p>
-        <p><strong>Rep:</strong> ${p.rep}</p>
         <p><strong>Invoice #:</strong> ${p["inv#"]}</p>
       </div>
     `).join('');
   }
 }
 
-// ============================
-// Helper: filtered breakdown
-// ============================
+// Filter + grouping function (same as before)
 function getFilteredBreakdown(products, filters) {
-  const { term, customer, rep, minPrice, maxPrice } = filters;
+  const { term, customer, minPrice, maxPrice } = filters;
 
   const filtered = products.filter(p => {
-    // Primary filter
     if (term && !p.description.toLowerCase().includes(term.toLowerCase()) &&
         !p.sku.toLowerCase().includes(term.toLowerCase())) return false;
 
-    // Secondary filters
     if (customer && p.customer !== customer) return false;
-    if (rep && p.rep !== rep) return false;
 
-    // Numeric filters
     if (minPrice != null && Number(p.price) < minPrice) return false;
     if (maxPrice != null && Number(p.price) > maxPrice) return false;
 
     return true;
   });
 
-  // Group by customer + month
   const grouped = {};
   filtered.forEach(p => {
     const month = new Date(p.date).toLocaleString('default', { month: 'short', year: 'numeric' });
@@ -148,5 +130,5 @@ function getFilteredBreakdown(products, filters) {
   return Object.values(grouped);
 }
 
-// 5️⃣ Kick everything off
+// Start the app
 loadProducts();
