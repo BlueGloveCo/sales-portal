@@ -1,71 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sales Portal</title>
-  <link rel="stylesheet" href="style.css" />
-  <style>
-    /* Optional inline styles for breakdown table */
-    .breakdown-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1em;
-    }
-
-    .breakdown-table th,
-    .breakdown-table td {
-      border: 1px solid #ddd;
-      padding: 8px;
-      text-align: left;
-    }
-
-    .breakdown-table th {
-      background: #f5f5f5;
-      font-weight: 600;
-    }
-
-    /* Basic card styles (if not in style.css) */
-    .card {
-      border: 1px solid #ddd;
-      padding: 12px;
-      border-radius: 6px;
-      margin: 8px;
-      background: #fff;
-    }
-
-    .results-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 16px;
-      padding: 16px;
-    }
-
-    header.header {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 16px;
-      background-color: #f8f8f8;
-      gap: 12px;
-    }
-
-    header.header input {
-      width: 100%;
-      max-width: 400px;
-      padding: 8px 12px;
-      font-size: 16px;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-    }
-
-    footer.footer {
-      text-align: center;
-      padding: 12px;
-      font-size: 14px;
-      color: #555;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sales Portal</title>
+<link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
@@ -73,31 +12,26 @@
   <h1>Sales Portal</h1>
 
   <div class="filters-container">
-    <!-- SKU / Product search -->
     <label>
-      Product / SKU:
-      <input type="text" id="skuFilter" placeholder="Search by SKU or description..." />
+      Search Product / SKU:
+      <input type="text" id="searchInput" placeholder="Type keyword..." />
     </label>
 
-    <!-- Customer filter (dynamic) -->
     <label>
-      Customer:
-      <select id="customerFilter">
-        <option value="">All Customers</option>
-        <!-- dynamically populated from JS based on search -->
+      Select SKU:
+      <select id="skuSelect">
+        <option value="">Select SKU</option>
       </select>
     </label>
   </div>
 </header>
 
+<main id="resultsContainer" class="results-grid"></main>
 
-  <!-- results container: cards or table will render here -->
-  <main id="resultsContainer" class="results-grid"></main>
+<footer class="footer">
+  <p>Last updated: <span id="lastUpdated"></span></p>
+</footer>
 
-  <footer class="footer">
-    <p>Last updated: <span id="lastUpdated"></span></p>
-  </footer>
-
-  <script src="app.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
