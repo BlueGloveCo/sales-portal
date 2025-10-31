@@ -4,41 +4,65 @@ async function loadProducts() {
   const products = await res.json();
 
   const searchInput = document.getElementById('searchInput');
+  const customerFilter = document.getElementById('customerFilter');
+  const repFilter = document.getElementById('repFilter');
+  const minPriceFilter = document.getElementById('minPriceFilter');
+  const maxPriceFilter = document.getElementById('maxPriceFilter');
   const resultsContainer = document.getElementById('resultsContainer');
   const lastUpdated = document.getElementById('lastUpdated');
 
   lastUpdated.textContent = "N/A"; // optional
 
-  // 2️⃣ Render all products initially as cards
+  // 2️⃣ Populate customer and rep dropdowns dynamically
+  const uniqueCustomers = [...new Set(products.map(p => p.customer))];
+  uniqueCustomers.forEach(c => customerFilter.insertAdjacentHTML('beforeend', `<option value="${c}">${c}</option>`));
+
+  const uniqueReps = [...new Set(products.map(p => p.rep))];
+  uniqueReps.forEach(r => repFilter.insertAdjacentHTML('beforeend', `<option value="${r}">${r}</option>`));
+
+  // 3️⃣ Render all products initially as cards
   renderProducts(products);
 
-  // 3️⃣ Listen for search input
-  searchInput.addEventListener('input', (e) => {
-    const term = e.target.value.trim().toLowerCase();
+  // 4️⃣ Listen for any filter change
+  [searchInput, customerFilter, repFilter, minPriceFilter, maxPriceFilter].forEach(el => {
+    el.addEventListener('input', updateResults);
+    el.addEventListener('change', updateResults);
+  });
 
-    if (term.length === 0) {
-      // show all cards again
+  function updateResults() {
+    const filters = {
+      term: searchInput.value.trim().toLowerCase(),
+      customer: customerFilter.value,
+      rep: repFilter.value,
+      minPrice: minPriceFilter.value ? Number(minPriceFilter.value) : null,
+      maxPrice: maxPriceFilter.value ? Number(maxPriceFilter.value) : null
+    };
+
+    // If no filters, show all cards
+    if (!filters.term && !filters.customer && !filters.rep && filters.minPrice == null && filters.maxPrice == null) {
       renderProducts(products);
       return;
     }
 
-    // Generate breakdown for search term
-    const breakdown = getMonthlyBreakdown(products, term);
+    // Generate filtered breakdown
+    const breakdown = getFilteredBreakdown(products, filters);
 
     if (breakdown.length === 0) {
-      resultsContainer.innerHTML = `<p>No data found for "${term}".</p>`;
+      resultsContainer.innerHTML = `<p>No data matches the selected filters.</p>`;
       return;
     }
 
-    // Render breakdown table instead of cards
+    // Render breakdown table
     resultsContainer.innerHTML = `
-      <h3>Monthly Breakdown for "${term.toUpperCase()}"</h3>
+      <h3>Filtered Monthly Breakdown</h3>
       <table class="breakdown-table">
         <thead>
           <tr>
             <th>Customer</th>
             <th>Month</th>
-            <th>Total Quantity</th>
+            <th>Total Qty</th>
+            <th>Total Price</th>
+            <th>Total Cost</th>
           </tr>
         </thead>
         <tbody>
@@ -47,12 +71,14 @@ async function loadProducts() {
               <td>${row.customer}</td>
               <td>${row.month}</td>
               <td>${row.totalQty}</td>
+              <td>$${row.totalPrice.toFixed(2)}</td>
+              <td>$${row.totalCost.toFixed(2)}</td>
             </tr>
           `).join('')}
         </tbody>
       </table>
     `;
-  });
+  }
 
   // ============================
   // Helper: render products as cards
@@ -79,18 +105,29 @@ async function loadProducts() {
 }
 
 // ============================
-// Helper: calculate monthly breakdown
+// Helper: filtered breakdown
 // ============================
-function getMonthlyBreakdown(products, searchTerm) {
-  // Filter by product name or SKU
-  const filtered = products.filter(p =>
-    p.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.sku.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+function getFilteredBreakdown(products, filters) {
+  const { term, customer, rep, minPrice, maxPrice } = filters;
+
+  const filtered = products.filter(p => {
+    // Primary filter
+    if (term && !p.description.toLowerCase().includes(term.toLowerCase()) &&
+        !p.sku.toLowerCase().includes(term.toLowerCase())) return false;
+
+    // Secondary filters
+    if (customer && p.customer !== customer) return false;
+    if (rep && p.rep !== rep) return false;
+
+    // Numeric filters
+    if (minPrice != null && Number(p.price) < minPrice) return false;
+    if (maxPrice != null && Number(p.price) > maxPrice) return false;
+
+    return true;
+  });
 
   // Group by customer + month
   const grouped = {};
-
   filtered.forEach(p => {
     const month = new Date(p.date).toLocaleString('default', { month: 'short', year: 'numeric' });
     const key = `${p.customer}_${month}`;
@@ -98,15 +135,18 @@ function getMonthlyBreakdown(products, searchTerm) {
       grouped[key] = {
         customer: p.customer,
         month,
-        totalQty: 0
+        totalQty: 0,
+        totalPrice: 0,
+        totalCost: 0
       };
     }
     grouped[key].totalQty += Number(p.qty) || 0;
+    grouped[key].totalPrice += (Number(p.price) || 0) * (Number(p.qty) || 0);
+    grouped[key].totalCost += (Number(p.cost) || 0) * (Number(p.qty) || 0);
   });
 
-  // Convert object → array
   return Object.values(grouped);
 }
 
-// 4️⃣ Kick everything off
+// 5️⃣ Kick everything off
 loadProducts();
