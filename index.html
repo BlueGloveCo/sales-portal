@@ -69,10 +69,42 @@
 </head>
 <body>
 
-  <header class="header">
-    <h1>Sales Portal</h1>
-    <input type="text" id="searchInput" placeholder="Search products by name or SKU..." />
-  </header>
+<header class="header">
+  <h1>Sales Portal</h1>
+
+  <!-- Primary search -->
+  <input type="text" id="searchInput" placeholder="Search products by name or SKU..." />
+
+  <!-- Secondary filters -->
+  <div class="filters-container">
+    <label>
+      Customer:
+      <select id="customerFilter">
+        <option value="">All Customers</option>
+        <!-- dynamically populated from JS -->
+      </select>
+    </label>
+
+    <label>
+      Rep:
+      <select id="repFilter">
+        <option value="">All Reps</option>
+        <!-- dynamically populated from JS -->
+      </select>
+    </label>
+
+    <label>
+      Min Price:
+      <input type="number" id="minPriceFilter" placeholder="0" min="0" />
+    </label>
+
+    <label>
+      Max Price:
+      <input type="number" id="maxPriceFilter" placeholder="0" min="0" />
+    </label>
+  </div>
+</header>
+
 
   <!-- results container: cards or table will render here -->
   <main id="resultsContainer" class="results-grid"></main>
