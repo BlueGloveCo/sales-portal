@@ -1,4 +1,5 @@
 async function loadProducts() {
+  // 1️⃣ Fetch the JSON
   const res = await fetch('data/products.json');
   const products = await res.json();
 
@@ -8,51 +9,54 @@ async function loadProducts() {
 
   lastUpdated.textContent = "N/A"; // optional
 
-  // Render all products initially
+  // 2️⃣ Render all products initially as cards
   renderProducts(products);
 
-  // 🧩 Listen for search input
-searchInput.addEventListener('input', (e) => {
-  const term = e.target.value.trim().toLowerCase();
+  // 3️⃣ Listen for search input
+  searchInput.addEventListener('input', (e) => {
+    const term = e.target.value.trim().toLowerCase();
 
-  if (term.length === 0) {
-    // show all cards again
-    renderProducts(products);
-    return;
-  }
+    if (term.length === 0) {
+      // show all cards again
+      renderProducts(products);
+      return;
+    }
 
-  // 👇 generate breakdown
-  const breakdown = getMonthlyBreakdown(products, term);
+    // Generate breakdown for search term
+    const breakdown = getMonthlyBreakdown(products, term);
 
-  if (breakdown.length === 0) {
-    resultsContainer.innerHTML = `<p>No data found for "${term}".</p>`;
-    return;
-  }
+    if (breakdown.length === 0) {
+      resultsContainer.innerHTML = `<p>No data found for "${term}".</p>`;
+      return;
+    }
 
-  // 👇 replace card rendering with table
-  resultsContainer.innerHTML = `
-    <h3>Monthly Breakdown for "${term.toUpperCase()}"</h3>
-    <table class="breakdown-table">
-      <thead>
-        <tr>
-          <th>Customer</th>
-          <th>Month</th>
-          <th>Total Quantity</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${breakdown.map(row => `
+    // Render breakdown table instead of cards
+    resultsContainer.innerHTML = `
+      <h3>Monthly Breakdown for "${term.toUpperCase()}"</h3>
+      <table class="breakdown-table">
+        <thead>
           <tr>
-            <td>${row.customer}</td>
-            <td>${row.month}</td>
-            <td>${row.totalQty}</td>
+            <th>Customer</th>
+            <th>Month</th>
+            <th>Total Quantity</th>
           </tr>
-        `).join('')}
-      </tbody>
-    </table>
-  `;
-});
-  // 🧩 Original card renderer
+        </thead>
+        <tbody>
+          ${breakdown.map(row => `
+            <tr>
+              <td>${row.customer}</td>
+              <td>${row.month}</td>
+              <td>${row.totalQty}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  });
+
+  // ============================
+  // Helper: render products as cards
+  // ============================
   function renderProducts(list) {
     if (!list || list.length === 0) {
       resultsContainer.innerHTML = `<p>No products found.</p>`;
@@ -74,10 +78,8 @@ searchInput.addEventListener('input', (e) => {
   }
 }
 
-loadProducts();
-
 // ============================
-// NEW breakdown logic
+// Helper: calculate monthly breakdown
 // ============================
 function getMonthlyBreakdown(products, searchTerm) {
   // Filter by product name or SKU
@@ -105,3 +107,6 @@ function getMonthlyBreakdown(products, searchTerm) {
   // Convert object → array
   return Object.values(grouped);
 }
+
+// 4️⃣ Kick everything off
+loadProducts();
