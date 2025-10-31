@@ -14,27 +14,31 @@ async function loadProducts() {
 
   let currentBreakdown = [];
 
-  // Keyword search event
+  // Keyword search
   searchInput.addEventListener('input', () => {
     const term = searchInput.value.trim().toLowerCase();
 
-    // Filter products by keyword in SKU or description
     const filtered = products.filter(p =>
       p.sku.toLowerCase().includes(term) || p.description.toLowerCase().includes(term)
     );
 
-    // Render filtered products as cards
     renderProducts(filtered);
 
-        // Populate SKU dropdown from filtered results
-const uniqueSkus = [...new Set(filtered.map(p => p.sku))];
-skuSelect.innerHTML = `<option value="">Select SKU</option>` +
-  uniqueSkus.map(sku => {
-    const product = filtered.find(p => p.sku === sku);
-    return `<option value="${sku}">${sku} — ${product.description}</option>`;
-  }).join('');
+    // Populate SKU dropdown with SKU + Description
+    const skuOptions = [];
+    const seen = new Set();
+    filtered.forEach(p => {
+      if (!seen.has(p.sku)) {
+        seen.add(p.sku);
+        skuOptions.push({ sku: p.sku, description: p.description });
+      }
+    });
 
-  // SKU selection event
+    skuSelect.innerHTML = `<option value="">Select SKU</option>` +
+      skuOptions.map(p => `<option value="${p.sku}">${p.sku} — ${p.description}</option>`).join('');
+  });
+
+  // SKU selection → detailed monthly breakdown
   skuSelect.addEventListener('change', () => {
     const selectedSKU = skuSelect.value;
     if (!selectedSKU) {
@@ -52,6 +56,7 @@ skuSelect.innerHTML = `<option value="">Select SKU</option>` +
     renderBreakdownTable(currentBreakdown);
   });
 
+  // Render product cards
   function renderProducts(list) {
     if (!list.length) {
       resultsContainer.innerHTML = `<p>No products found.</p>`;
@@ -71,10 +76,10 @@ skuSelect.innerHTML = `<option value="">Select SKU</option>` +
     `).join('');
   }
 
+  // Group products by month + customer
   function getMonthlyBreakdown(list) {
     const grouped = {};
     list.forEach(p => {
-      // Parse date safely
       const d = new Date(p.date);
       if (isNaN(d)) return;
       const month = d.toLocaleString('default', { month: 'short', year: 'numeric' });
@@ -90,6 +95,7 @@ skuSelect.innerHTML = `<option value="">Select SKU</option>` +
     }));
   }
 
+  // Render monthly breakdown table
   function renderBreakdownTable(data) {
     resultsContainer.innerHTML = `
       <h3>Monthly Breakdown for SKU: ${skuSelect.value}</h3>
