@@ -13,23 +13,17 @@ async function loadProducts() {
   renderProducts(products);
 
   let currentBreakdown = [];
-  let sortConfig = { key: null, asc: true };
 
-  // Event: keyword search
+  // Keyword search event
   searchInput.addEventListener('input', () => {
     const term = searchInput.value.trim().toLowerCase();
-    if (!term) {
-      renderProducts(products);
-      skuSelect.innerHTML = `<option value="">Select SKU</option>`;
-      return;
-    }
 
+    // Filter products by keyword in SKU or description
     const filtered = products.filter(p =>
-      p.description.toLowerCase().includes(term) ||
-      p.sku.toLowerCase().includes(term)
+      p.sku.toLowerCase().includes(term) || p.description.toLowerCase().includes(term)
     );
 
-    // Render cards for matching products
+    // Render filtered products as cards
     renderProducts(filtered);
 
     // Populate SKU dropdown from filtered results
@@ -38,14 +32,14 @@ async function loadProducts() {
       uniqueSkus.map(s => `<option value="${s}">${s}</option>`).join('');
   });
 
-  // Event: SKU selection → detailed monthly breakdown
+  // SKU selection event
   skuSelect.addEventListener('change', () => {
     const selectedSKU = skuSelect.value;
     if (!selectedSKU) {
+      // Show filtered products if no SKU selected
       const term = searchInput.value.trim().toLowerCase();
       const filtered = products.filter(p =>
-        p.description.toLowerCase().includes(term) ||
-        p.sku.toLowerCase().includes(term)
+        p.sku.toLowerCase().includes(term) || p.description.toLowerCase().includes(term)
       );
       renderProducts(filtered);
       return;
@@ -78,7 +72,10 @@ async function loadProducts() {
   function getMonthlyBreakdown(list) {
     const grouped = {};
     list.forEach(p => {
-      const month = new Date(p.date).toLocaleString('default', { month: 'short', year: 'numeric' });
+      // Parse date safely
+      const d = new Date(p.date);
+      if (isNaN(d)) return;
+      const month = d.toLocaleString('default', { month: 'short', year: 'numeric' });
       const key = `${p.customer}_${month}`;
       if (!grouped[key]) grouped[key] = { customer: p.customer, month, totalQty: 0, totalPrice: 0, totalCost: 0 };
       grouped[key].totalQty += Number(p.qty) || 0;
@@ -117,20 +114,6 @@ async function loadProducts() {
         </tbody>
       </table>
     `;
-
-    // Add click events for sorting
-    document.querySelectorAll('.breakdown-table th').forEach(th => {
-      th.addEventListener('click', () => {
-        const key = th.dataset.key;
-        sortConfig.asc = sortConfig.key === key ? !sortConfig.asc : true;
-        sortConfig.key = key;
-        const sorted = [...currentBreakdown].sort((a, b) => {
-          if (typeof a[key] === 'string') return sortConfig.asc ? a[key].localeCompare(b[key]) : b[key].localeCompare(a[key]);
-          return sortConfig.asc ? a[key] - b[key] : b[key] - a[key];
-        });
-        renderBreakdownTable(sorted);
-      });
-    });
   }
 }
 
