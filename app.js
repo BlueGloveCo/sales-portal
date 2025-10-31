@@ -12,47 +12,46 @@ async function loadProducts() {
   renderProducts(products);
 
   // 🧩 Listen for search input
-  searchInput.addEventListener('input', (e) => {
-    const term = e.target.value.trim().toLowerCase();
+searchInput.addEventListener('input', (e) => {
+  const term = e.target.value.trim().toLowerCase();
 
-    if (term.length === 0) {
-      // show all cards again
-      renderProducts(products);
-      return;
-    }
+  if (term.length === 0) {
+    // show all cards again
+    renderProducts(products);
+    return;
+  }
 
-    // 👇 NEW: use breakdown view instead of simple filter
-    const breakdown = getMonthlyBreakdown(products, term);
+  // 👇 generate breakdown
+  const breakdown = getMonthlyBreakdown(products, term);
 
-    if (breakdown.length === 0) {
-      resultsContainer.innerHTML = `<p>No data found for "${term}".</p>`;
-      return;
-    }
+  if (breakdown.length === 0) {
+    resultsContainer.innerHTML = `<p>No data found for "${term}".</p>`;
+    return;
+  }
 
-    // 👇 Render breakdown table
-    resultsContainer.innerHTML = `
-      <h3>Monthly Breakdown for "${term.toUpperCase()}"</h3>
-      <table class="breakdown-table">
-        <thead>
+  // 👇 replace card rendering with table
+  resultsContainer.innerHTML = `
+    <h3>Monthly Breakdown for "${term.toUpperCase()}"</h3>
+    <table class="breakdown-table">
+      <thead>
+        <tr>
+          <th>Customer</th>
+          <th>Month</th>
+          <th>Total Quantity</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${breakdown.map(row => `
           <tr>
-            <th>Customer</th>
-            <th>Month</th>
-            <th>Total Quantity</th>
+            <td>${row.customer}</td>
+            <td>${row.month}</td>
+            <td>${row.totalQty}</td>
           </tr>
-        </thead>
-        <tbody>
-          ${breakdown.map(row => `
-            <tr>
-              <td>${row.customer}</td>
-              <td>${row.month}</td>
-              <td>${row.totalQty}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    `;
-  });
-
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+});
   // 🧩 Original card renderer
   function renderProducts(list) {
     if (!list || list.length === 0) {
