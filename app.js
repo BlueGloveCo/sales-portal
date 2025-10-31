@@ -26,11 +26,13 @@ async function loadProducts() {
     // Render filtered products as cards
     renderProducts(filtered);
 
-    // Populate SKU dropdown from filtered results
-    const uniqueSkus = [...new Set(filtered.map(p => p.sku))];
-    skuSelect.innerHTML = `<option value="">Select SKU</option>` +
-      uniqueSkus.map(s => `<option value="${s}">${s}</option>`).join('');
-  });
+        // Populate SKU dropdown from filtered results
+const uniqueSkus = [...new Set(filtered.map(p => p.sku))];
+skuSelect.innerHTML = `<option value="">Select SKU</option>` +
+  uniqueSkus.map(sku => {
+    const product = filtered.find(p => p.sku === sku);
+    return `<option value="${sku}">${sku} — ${product.description}</option>`;
+  }).join('');
 
   // SKU selection event
   skuSelect.addEventListener('change', () => {
