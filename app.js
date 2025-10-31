@@ -1,9 +1,6 @@
 async function loadProducts() {
   const res = await fetch('data/products.json');
-  console.log('Response status:', res.status);
-
   const products = await res.json();
-  console.log('Parsed JSON:', products);
 
   const searchInput = document.getElementById('searchInput');
   const resultsContainer = document.getElementById('resultsContainer');
@@ -14,19 +11,49 @@ async function loadProducts() {
   // Render all products initially
   renderProducts(products);
 
-  // Filter products on search input
+  // 🧩 Listen for search input
   searchInput.addEventListener('input', (e) => {
-    const term = e.target.value.toLowerCase();
+    const term = e.target.value.trim().toLowerCase();
 
-    const filtered = products.filter(p =>
-      p.description.toLowerCase().includes(term) ||
-      p.sku.toLowerCase().includes(term) ||
-      p.customer.toLowerCase().includes(term)
-    );
+    if (term.length === 0) {
+      // show all cards again
+      renderProducts(products);
+      return;
+    }
 
-    renderProducts(filtered);
+    // 👇 NEW: use breakdown view instead of simple filter
+    const breakdown = getMonthlyBreakdown(products, term);
+
+    if (breakdown.length === 0) {
+      resultsContainer.innerHTML = `<p>No data found for "${term}".</p>`;
+      return;
+    }
+
+    // 👇 Render breakdown table
+    resultsContainer.innerHTML = `
+      <h3>Monthly Breakdown for "${term.toUpperCase()}"</h3>
+      <table class="breakdown-table">
+        <thead>
+          <tr>
+            <th>Customer</th>
+            <th>Month</th>
+            <th>Total Quantity</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${breakdown.map(row => `
+            <tr>
+              <td>${row.customer}</td>
+              <td>${row.month}</td>
+              <td>${row.totalQty}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
   });
 
+  // 🧩 Original card renderer
   function renderProducts(list) {
     if (!list || list.length === 0) {
       resultsContainer.innerHTML = `<p>No products found.</p>`;
@@ -49,3 +76,33 @@ async function loadProducts() {
 }
 
 loadProducts();
+
+// ============================
+// NEW breakdown logic
+// ============================
+function getMonthlyBreakdown(products, searchTerm) {
+  // Filter by product name or SKU
+  const filtered = products.filter(p =>
+    p.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.sku.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Group by customer + month
+  const grouped = {};
+
+  filtered.forEach(p => {
+    const month = new Date(p.date).toLocaleString('default', { month: 'short', year: 'numeric' });
+    const key = `${p.customer}_${month}`;
+    if (!grouped[key]) {
+      grouped[key] = {
+        customer: p.customer,
+        month,
+        totalQty: 0
+      };
+    }
+    grouped[key].totalQty += Number(p.qty) || 0;
+  });
+
+  // Convert object → array
+  return Object.values(grouped);
+}
