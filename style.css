@@ -50,6 +50,7 @@ body {
 .breakdown-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed; /* forces column width respect */
   margin-top: 1rem;
   font-size: 0.95rem;
 }
@@ -59,13 +60,13 @@ body {
   border: 1px solid #ddd;
   padding: 8px 10px;
   text-align: left;
-  white-space: nowrap;
+  overflow-wrap: break-word; /* wraps long words */
 }
 
 .breakdown-table th[data-key="customer"],
 .breakdown-table td:nth-child(1) {
-  width: 50%;       /* wider Customer column */
-  white-space: normal; /* allow wrapping */
+  width: 40%; /* forcefully wider column */
+  white-space: normal;
 }
 
 .breakdown-table th[data-key="month"],
@@ -79,7 +80,7 @@ body {
 .breakdown-table td:nth-child(4),
 .breakdown-table th[data-key="avgCost"],
 .breakdown-table td:nth-child(5) {
-  width: 10%;
+  width: 15%;
   text-align: right;
 }
 
