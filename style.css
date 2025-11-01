@@ -64,7 +64,7 @@ body {
 
 .breakdown-table th[data-key="customer"],
 .breakdown-table td:nth-child(1) {
-  width: 30%;       /* wider Customer column */
+  width: 50%;       /* wider Customer column */
   white-space: normal; /* allow wrapping */
 }
 
