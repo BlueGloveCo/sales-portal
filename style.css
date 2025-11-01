@@ -96,6 +96,7 @@ body {
 .breakdown-table tr:nth-child(even) {
   background-color: #fafafa;
 }
+
 .filters-container {
   display: flex;
   flex-wrap: wrap;
