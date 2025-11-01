@@ -25,17 +25,16 @@ async function loadProducts() {
     renderProducts(filtered);
 
     // Populate SKU dropdown with SKU + Description
-    const skuOptions = [];
-    const seen = new Set();
+    const skuMap = new Map();
     filtered.forEach(p => {
-      if (!seen.has(p.sku)) {
-        seen.add(p.sku);
-        skuOptions.push({ sku: p.sku, description: p.description });
-      }
+      if (!skuMap.has(p.sku)) skuMap.set(p.sku, new Set());
+      skuMap.get(p.sku).add(p.description);
     });
 
     skuSelect.innerHTML = `<option value="">Select SKU</option>` +
-      skuOptions.map(p => `<option value="${p.sku}">${p.sku} — ${p.description}</option>`).join('');
+      [...skuMap.entries()].flatMap(([sku, descriptions]) =>
+        [...descriptions].map(desc => `<option value="${sku}">${sku} — ${desc}</option>`)
+      ).join('');
   });
 
   // SKU selection → detailed monthly breakdown
