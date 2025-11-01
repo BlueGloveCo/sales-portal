@@ -12,7 +12,9 @@ async function loadProducts() {
   // Initial render: all products as cards
   renderProducts(products);
 
+  // Keep the current breakdown and current sort state
   let currentBreakdown = [];
+  let sortConfig = { key: null, asc: true };
 
   // Keyword search
   searchInput.addEventListener('input', () => {
@@ -24,7 +26,7 @@ async function loadProducts() {
 
     renderProducts(filtered);
 
-    // Populate SKU dropdown with SKU + Description
+    // Populate SKU dropdown with SKU + Description (include all descriptions per SKU)
     const skuMap = new Map();
     filtered.forEach(p => {
       if (!skuMap.has(p.sku)) skuMap.set(p.sku, new Set());
@@ -52,6 +54,8 @@ async function loadProducts() {
 
     const skuProducts = products.filter(p => p.sku === selectedSKU);
     currentBreakdown = getMonthlyBreakdown(skuProducts);
+    // reset sort when loading new breakdown
+    sortConfig = { key: null, asc: true };
     renderBreakdownTable(currentBreakdown);
   });
 
@@ -75,27 +79,52 @@ async function loadProducts() {
     `).join('');
   }
 
-  // Group products by month + customer
+  // Group products by month + customer and compute avg price & avg cost per unit.
+  // We also add monthKey (YYYY-MM) to allow correct chronological sorting.
   function getMonthlyBreakdown(list) {
     const grouped = {};
     list.forEach(p => {
       const d = new Date(p.date);
       if (isNaN(d)) return;
-      const month = d.toLocaleString('default', { month: 'short', year: 'numeric' });
-      const key = `${p.customer}_${month}`;
-      if (!grouped[key]) grouped[key] = { customer: p.customer, month, totalQty: 0, totalPrice: 0, totalCost: 0 };
-      grouped[key].totalQty += Number(p.qty) || 0;
-      grouped[key].totalPrice += (Number(p.price) || 0) * (Number(p.qty) || 0);
-      grouped[key].totalCost += (Number(p.cost) || 0) * (Number(p.qty) || 0);
+      const month = d.toLocaleString('default', { month: 'short', year: 'numeric' }); // display
+      const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; // for sorting
+      const key = `${p.customer}_${monthKey}`;
+
+      if (!grouped[key]) {
+        grouped[key] = {
+          customer: p.customer,
+          month,
+          monthKey,
+          totalQty: 0,
+          totalPrice: 0, // price * qty
+          totalCostAmount: 0 // cost * qty
+        };
+      }
+
+      const qty = Number(p.qty) || 0;
+      const price = Number(p.price) || 0;
+      const cost = Number(p.cost) || 0;
+
+      grouped[key].totalQty += qty;
+      grouped[key].totalPrice += price * qty;
+      grouped[key].totalCostAmount += cost * qty;
     });
+
     return Object.values(grouped).map(row => ({
       ...row,
-      avgPrice: row.totalQty ? row.totalPrice / row.totalQty : 0
+      avgPrice: row.totalQty ? row.totalPrice / row.totalQty : 0,
+      avgCost: row.totalQty ? row.totalCostAmount / row.totalQty : 0
     }));
   }
 
-  // Render monthly breakdown table
+  // Render monthly breakdown table and attach sortable headers
   function renderBreakdownTable(data) {
+    // ensure we have data
+    if (!data || data.length === 0) {
+      resultsContainer.innerHTML = `<p>No breakdown data available.</p>`;
+      return;
+    }
+
     resultsContainer.innerHTML = `
       <h3>Monthly Breakdown for SKU: ${skuSelect.value}</h3>
       <table class="breakdown-table">
@@ -105,7 +134,7 @@ async function loadProducts() {
             <th data-key="month">Month</th>
             <th data-key="totalQty">Total Qty</th>
             <th data-key="avgPrice">Avg Price</th>
-            <th data-key="totalCost">Total Cost</th>
+            <th data-key="avgCost">Cost</th>
           </tr>
         </thead>
         <tbody>
@@ -115,12 +144,45 @@ async function loadProducts() {
               <td>${row.month}</td>
               <td>${row.totalQty}</td>
               <td>$${row.avgPrice.toFixed(2)}</td>
-              <td>$${row.totalCost.toFixed(2)}</td>
+              <td>$${row.avgCost.toFixed(2)}</td>
             </tr>
           `).join('')}
         </tbody>
       </table>
     `;
+
+    // Attach click handlers to headers for sorting
+    document.querySelectorAll('.breakdown-table th').forEach(th => {
+      th.style.cursor = 'pointer';
+      th.onclick = () => {
+        const key = th.dataset.key;
+        // toggle asc/desc if same key; otherwise asc
+        sortConfig.asc = sortConfig.key === key ? !sortConfig.asc : true;
+        sortConfig.key = key;
+
+        // create sorted copy
+        const sorted = [...currentBreakdown].sort((a, b) => {
+          // month should use monthKey for chronological sort
+          if (key === 'month') {
+            const av = a.monthKey;
+            const bv = b.monthKey;
+            return sortConfig.asc ? av.localeCompare(bv) : bv.localeCompare(av);
+          }
+
+          // strings
+          if (typeof a[key] === 'string') {
+            return sortConfig.asc ? a[key].localeCompare(b[key]) : b[key].localeCompare(a[key]);
+          }
+
+          // numbers (avgPrice, avgCost, totalQty)
+          return sortConfig.asc ? a[key] - b[key] : b[key] - a[key];
+        });
+
+        // update the currentBreakdown so repeated sorts keep order
+        currentBreakdown = sorted;
+        renderBreakdownTable(sorted);
+      };
+    });
   }
 }
 
