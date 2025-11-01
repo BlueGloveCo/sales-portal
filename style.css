@@ -65,13 +65,13 @@ body {
 
 .breakdown-table th[data-key="customer"],
 .breakdown-table td:nth-child(1) {
-  width: 40%; /* forcefully wider column */
+  width: 50%; /* forcefully wider column */
   white-space: normal;
 }
 
 .breakdown-table th[data-key="month"],
 .breakdown-table td:nth-child(2) {
-  width: 15%;
+  width: 20%;
 }
 
 .breakdown-table th[data-key="totalQty"],
@@ -80,7 +80,7 @@ body {
 .breakdown-table td:nth-child(4),
 .breakdown-table th[data-key="avgCost"],
 .breakdown-table td:nth-child(5) {
-  width: 15%;
+  width: 20%;
   text-align: right;
 }
 
