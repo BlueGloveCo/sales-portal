@@ -24,7 +24,7 @@ body {
 
 .results-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
   gap: 1rem;
   padding: 2rem;
 }
@@ -48,10 +48,11 @@ body {
   font-size: 0.9rem;
 }
 .breakdown-table {
-  width: 100%;
+  width: 100% !important;         /* table occupies full width */
+  max-width: 100% !important;     /* remove the 1200px limit */
   border-collapse: collapse;
-  table-layout: fixed; /* forces column width respect */
-  margin-top: 1rem;
+  table-layout: auto !important;  /* let browser adjust column widths */
+  margin-top: 0.5rem;
   font-size: 0.95rem;
 }
 
@@ -60,18 +61,20 @@ body {
   border: 1px solid #ddd;
   padding: 8px 10px;
   text-align: left;
-  overflow-wrap: break-word; /* wraps long words */
+  vertical-align: top;
+  white-space: nowrap; /* prevent wrapping */
 }
 
 .breakdown-table th[data-key="customer"],
 .breakdown-table td:nth-child(1) {
-  width: 50%; /* forcefully wider column */
-  white-space: normal;
+  min-width: 280px !important; /* wider column */
+  max-width: 450px !important;
+  font-size: 0.90rem;
 }
 
 .breakdown-table th[data-key="month"],
 .breakdown-table td:nth-child(2) {
-  width: 20%;
+  width: 120px;
 }
 
 .breakdown-table th[data-key="totalQty"],
@@ -80,8 +83,8 @@ body {
 .breakdown-table td:nth-child(4),
 .breakdown-table th[data-key="avgCost"],
 .breakdown-table td:nth-child(5) {
-  width: 20%;
-  text-align: right;
+  width: 100px;
+  text-align: left;
 }
 
 .breakdown-table th {
@@ -97,6 +100,30 @@ body {
   background-color: #fafafa;
 }
 
+.breakdown-table th.sorted {
+  background-color: #eef5ff;
+  color: #0056b3;
+}
+.breakdown-table td:nth-child(3),
+.breakdown-table th[data-key="description"] {
+  max-width: 550px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.95rem;
+}
+
+.breakdown-table td:nth-child(3):hover::after {
+  content: attr(data-full);
+  position: absolute;
+  background: #fff;
+  border: 1px solid #ccc;
+  padding: 4px 8px;
+  white-space: normal;
+  z-index: 100;
+  width: max-content;
+  max-width: 400px;
+}
 .filters-container {
   display: flex;
   flex-wrap: wrap;
@@ -118,4 +145,8 @@ body {
   border: 1px solid #ccc;
   font-size: 14px;
   min-width: 120px;
+}
+.results-grid {
+  display: block; /* make tables and titles full width */
+  padding: 1rem 2rem;
 }
