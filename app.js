@@ -107,7 +107,7 @@ async function loadApp() {
       <table class="breakdown-table product-table" style="width:100%">
         <thead><tr>
           <th data-key="customer">Customer</th><th data-key="month">Month</th><th data-key="totalQty">Total Qty</th>
-          <th data-key="lastPrice">last Price</th><th data-key="lastCost">Cost</th>
+          <th data-key="lastPrice">Last Price</th><th data-key="lastCost">Cost</th>
         </tr></thead>
         <tbody>${data.map(r=>`<tr>
           <td>${escapeHtml(r.customer)}</td>
